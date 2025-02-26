@@ -39,7 +39,16 @@ public record AuthenticationResponse(
             String username,
             JwtProperties jwtProperties) {
 
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiration = now.plusSeconds(jwtProperties.getExpiration().getSeconds());
+
+        return new AuthenticationResponse(
+                token,
+                "Bearer",
+                now,
+                expiration,
+                jwtProperties.getIssuer(),
+                username
+        );
     }
 }

@@ -8,11 +8,13 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = JwtPropertiesTest.TestConfig.class)
 @TestPropertySource(properties = {
         "jwt.secret=new-secret",
-        "jwt.expiration-ms=7200000",
+        "jwt.expiration=PT1H",
         "jwt.issuer=new-issuer"
 })
 class JwtPropertiesTest {
@@ -24,7 +26,7 @@ class JwtPropertiesTest {
     void shouldLoadJwtPropertiesCorrectly() {
         assertThat(jwtProperties).isNotNull();
         assertThat(jwtProperties.getSecret()).isEqualTo("new-secret");
-        assertThat(jwtProperties.getExpirationMs()).isEqualTo(7200000L);
+        assertThat(jwtProperties.getExpiration()).isEqualTo(Duration.ofHours(1L));
         assertThat(jwtProperties.getIssuer()).isEqualTo("new-issuer");
     }
 

@@ -65,7 +65,12 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                        HttpServletResponse response,
                        AccessDeniedException exception) throws IOException {
 
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        log.warn("Access denied: {}", exception.getMessage());
+
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        ApiResponse<?> apiResponse = ApiResponse.error("Unauthorized: " + exception.getMessage());
+        objectMapper.writeValue(response.getOutputStream(), apiResponse);
     }
 }

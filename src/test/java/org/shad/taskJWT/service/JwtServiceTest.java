@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -47,12 +48,12 @@ class JwtServiceTest {
     private static final String TEST_SECRET =
             "9FE731B56C152D78B780CE60C2E28AF73FD8BE454E98F87A5B6CE72C9DD84F9C42B8C9D1F0123456789ABCDEF0123456789ABCDEF";
     private static final String TEST_ISSUER = "test-issuer";
-    private static final long TEST_EXPIRATION = 3600000; // 1 hour
+    private static final Duration TEST_EXPIRATION = Duration.parse("PT1H");
 
     @BeforeEach
     void setUp() {
         lenient().when(jwtProperties.getSecret()).thenReturn(TEST_SECRET);
-        lenient().when(jwtProperties.getExpirationMs()).thenReturn(TEST_EXPIRATION);
+        lenient().when(jwtProperties.getExpiration()).thenReturn(TEST_EXPIRATION);
         lenient().when(jwtProperties.getIssuer()).thenReturn(TEST_ISSUER);
 
         // Create JWT service with mocked properties
@@ -125,7 +126,7 @@ class JwtServiceTest {
 
             // Verify expiration is roughly TEST_EXPIRATION milliseconds in the future
             // Allow 10 second margin for test execution
-            long expectedExpirationTime = currentTimeMillis + TEST_EXPIRATION;
+            long expectedExpirationTime = currentTimeMillis + TEST_EXPIRATION.toMillis();
             long actualExpirationTime = expiration.getTime();
 
             // The expiration time should be within 10 seconds of expected
@@ -170,7 +171,7 @@ class JwtServiceTest {
         void shouldRejectExpiredToken() throws Exception {
             // Given
             // Override the expiration to a very short time
-            when(jwtProperties.getExpirationMs()).thenReturn(1L); // 1ms expiration
+            when(jwtProperties.getExpiration()).thenReturn(Duration.ofMillis(1L));
 
             // Generate token with 1ms expiration
             String token = jwtService.generateToken(userDetails);

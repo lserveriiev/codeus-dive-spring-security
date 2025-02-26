@@ -4,6 +4,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
+
 /**
  * Configuration properties for JWT (JSON Web Token) authentication.
  * <p>
@@ -31,6 +34,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "jwt")
 public class JwtProperties {
     private String secret;
-    private long expirationMs;
+    private Duration expiration;
     private String issuer;
 }

@@ -67,8 +67,20 @@ public class JwtService {
      * @return a compact, URL-safe JWT string
      */
     public String generateToken(UserDetails userDetails) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", userDetails.getAuthorities());
+
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration().toMillis());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .setIssuer(jwtProperties.getIssuer())
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     /**
@@ -90,8 +102,16 @@ public class JwtService {
      * @return true if the token is valid for the specified user, false otherwise
      */
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        try {
+            final String username = extractUsername(token);
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT expired: {}", token);
+            return false;
+        } catch (JwtException e) {
+            log.error("Invalid JWT token: {}", token);
+            return false;
+        }
     }
 
     /**
@@ -109,8 +129,7 @@ public class JwtService {
      * @throws JwtException if the token cannot be parsed or is invalid
      */
     public String extractUsername(String token) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        return extractClaim(token, Claims::getSubject);
     }
 
     /**
@@ -132,8 +151,25 @@ public class JwtService {
      * @throws JwtException          for any other JWT parsing/validation error
      */
     public Claims extractAllClaims(String token) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token expired: {}", e.getMessage());
+            throw e;
+        } catch (SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+            throw e;
+        } catch (MalformedJwtException e) {
+            log.error("Malformed JWT token: {}", e.getMessage());
+            throw e;
+        } catch (JwtException e) {
+            log.error("JWT token validation error: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -158,8 +194,8 @@ public class JwtService {
      * @throws JwtException if the token is invalid or cannot be parsed
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
     }
 
     /**
@@ -175,8 +211,14 @@ public class JwtService {
      * @return a Key suitable for JWT signing and verification
      */
     private Key getSigningKey() {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        try {
+            // Try to decode Base64 encoded secret first
+            byte[] keyBytes = Base64.getDecoder().decode(jwtProperties.getSecret());
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            // If not Base64 encoded, use raw bytes with proper UTF-8 encoding
+            return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     /**
@@ -193,8 +235,8 @@ public class JwtService {
      * @throws JwtException if the token is invalid or cannot be parsed
      */
     private boolean isTokenExpired(String token) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        Date expiration = extractClaim(token, Claims::getExpiration);
+        return expiration.before(new Date());
     }
 
     /**
@@ -212,8 +254,7 @@ public class JwtService {
      * @throws JwtException if the token is invalid or cannot be parsed
      */
     public Object extractAuthorities(String token) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        return extractAllClaims(token).get("roles");
     }
 
 }

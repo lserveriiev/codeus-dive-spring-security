@@ -1,6 +1,7 @@
 package org.shad.warmup.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Builder;
 import lombok.Value;
 
@@ -28,9 +29,12 @@ import java.time.LocalDateTime;
 @Value
 @Builder
 public class ApiResponse<T> {
-    // todo: Implement fields
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     LocalDateTime timestamp;
+    Status status;
+    T data;
+    String message;
 
     /**
      * Creates a successful API response with the provided data.
@@ -40,8 +44,11 @@ public class ApiResponse<T> {
      * @return A success response containing the data.
      */
     public static <T> ApiResponse<T> success(T data) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        return ApiResponse.<T>builder()
+                .status(Status.SUCCESS)
+                .data(data)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     /**
@@ -51,7 +58,20 @@ public class ApiResponse<T> {
      * @return An error response with a message.
      */
     public static <T> ApiResponse<T> error(String message) {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        return ApiResponse.<T>builder()
+                .status(Status.ERROR)
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    private enum Status {
+        SUCCESS,
+        ERROR;
+
+        @JsonValue
+        public String toJsonValue() {
+            return this.name().toLowerCase();
+        }
     }
 }

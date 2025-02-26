@@ -12,13 +12,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.core.userdetails.User;
 
 /**
  * Security configuration for the application.
@@ -45,8 +45,10 @@ import org.springframework.security.core.userdetails.User;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+
     /**
      * Configures the security filter chain for handling HTTP requests.
      * <p>
@@ -65,9 +67,30 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        return http
+                // Disables CSRF (since the app is stateless)
+                .csrf(AbstractHttpConfigurer::disable)
+                // Enforces stateless session management.
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Defines access control for authentication, public, and admin endpoints.
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                ApiConstants.API_BASE + ApiConstants.AUTH + "/**").permitAll()
+                        .requestMatchers(
+                                ApiConstants.API_BASE + ApiConstants.PUBLIC + "/**").permitAll()
+                        .requestMatchers(
+                                ApiConstants.API_BASE + ApiConstants.ADMIN + "/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                // Handles authentication and access denied exceptions.
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
+                // Enables HTTP Basic authentication.
+                .httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
+                .build();
     }
+
     /**
      * Provides an in-memory user details service for authentication.
      * <p>
@@ -90,6 +113,7 @@ public class SecurityConfig {
                 createUserDetails("admin", passwordEncoder, "ADMIN")
         );
     }
+
     /**
      * Provides a password encoder for hashing passwords securely.
      * <p>
@@ -99,8 +123,21 @@ public class SecurityConfig {
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
+        return new BCryptPasswordEncoder(12);
+    }
+
+    /**
+     * Provides an {@link AuthenticationManager} bean.
+     * <p>
+     * This is used by the authentication system to manage user authentication.
+     *
+     * @param config The authentication configuration provided by Spring Security.
+     * @return An {@link AuthenticationManager} instance.
+     * @throws Exception if an error occurs while retrieving the authentication manager.
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     /**
@@ -124,6 +161,7 @@ public class SecurityConfig {
                 .disabled(false)
                 .build();
     }
+
     /**
      * Generates a **secure password** for a user.
      * <p>
@@ -138,18 +176,4 @@ public class SecurityConfig {
         return String.format("%s_Codeus", username);
     }
 
-    /**
-     * Provides an {@link AuthenticationManager} bean.
-     * <p>
-     * This is used by the authentication system to manage user authentication.
-     *
-     * @param config The authentication configuration provided by Spring Security.
-     * @return An {@link AuthenticationManager} instance.
-     * @throws Exception if an error occurs while retrieving the authentication manager.
-     */
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        // todo: Implement this method
-        throw new UnsupportedOperationException();
-    }
 }

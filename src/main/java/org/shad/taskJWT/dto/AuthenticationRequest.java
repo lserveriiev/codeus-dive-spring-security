@@ -19,8 +19,10 @@ import jakarta.validation.constraints.NotBlank;
  * @param password the password of the user attempting to authenticate (must not be blank)
  */
 public record AuthenticationRequest(
-// todo: Improve for validation
+    @NotBlank(message = "Username is required")
     String username,
+
+    @NotBlank(message = "Password is required")
     String password
 )
 {
